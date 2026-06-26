@@ -31,34 +31,27 @@
 
     <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-        <!-- Control Station (Filters & Global Search) -->
+        <!-- Control Station (Filters) -->
         <section class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-end">
-            <div class="w-full md:w-1/4">
-                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Fiscal Year</label>
+            <div class="w-full md:w-1/3">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Search by Year</label>
                 <select id="filter-fy" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                    <option value="ALL">All Fiscal Years</option>
+                    <option value="ALL">All Years</option>
                 </select>
             </div>
-            <div class="w-full md:w-1/4">
+            <div class="w-full md:w-1/3">
                 <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Training Mode</label>
                 <select id="filter-mode" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                    <option value="ALL">All Modes (Physical & Online)</option>
+                    <option value="ALL">All Modes</option>
                     <option value="Physical">Physical</option>
                     <option value="Online">Online</option>
+                    <option value="Offsite">Offsite</option>
+                    <option value="Certificate course">Certificate course</option>
                 </select>
             </div>
-            <div class="w-full md:w-1/4">
-                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Core Mission Portfolio</label>
-                <select id="filter-mission" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                    <option value="ALL">All Mission Verticals</option>
-                    <option value="JJM">Jal Jeevan Mission (JJM)</option>
-                    <option value="SBM">Swachh Bharat Mission (SBM-G)</option>
-                    <option value="OTHER">Other Initiatives</option>
-                </select>
-            </div>
-            <div class="w-full md:w-1/4">
-                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Search Table Records</label>
-                <input type="text" id="search-table" placeholder="Type to search program or keyword..." class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+            <div class="w-full md:w-1/3">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Search by Mission name</label>
+                <input type="text" id="filter-mission-search" placeholder="Type mission name (e.g., JJM, SBM)..." class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
             </div>
         </section>
 
@@ -69,7 +62,7 @@
                 <h3 id="kpi-total-trained" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
             </div>
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-indigo-600">
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Programs Conducted</p>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">No. of Trainings conducted</p>
                 <h3 id="kpi-total-progs" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
             </div>
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-emerald-600">
@@ -86,14 +79,14 @@
         <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Growth Trends Chart -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 lg:col-span-2 flex flex-col justify-between">
-                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Macro Growth Trends (FY Allocation)</h4>
+                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">FY-wise trend</h4>
                 <div class="relative h-64 w-full">
                     <canvas id="chart-trends"></canvas>
                 </div>
             </div>
             <!-- Mission Distribution Chart -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
-                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Portfolio Market Share</h4>
+                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Mission wise</h4>
                 <div class="relative h-64 w-full flex justify-center">
                     <canvas id="chart-mission"></canvas>
                 </div>
@@ -118,10 +111,8 @@
     </main>
 
     <script>
-        // Target Google Sheet Engine URL
         const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSM4pDzELLAQqxIxXJ1J6OcvtUpTSWqGyXeCGmTPHrtJzN-3t1nCDy3ACwnRUMFm-TXDhNtKrR_Vxpl/pub?gid=1260538750&single=true&output=csv";
         
-        // Define hardcoded collection mapping of State/UT columns present in the sheet
         const stateColumns = [
             "A&N Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chattisgarh", "Delhi", 
             "Dadra & Nagar Haveli & Daman & Diu", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", 
@@ -131,14 +122,12 @@
             "Uttar Pradesh", "Uttarakhand", "West Bengal"
         ];
 
-        // Core data structures
         let rawDataset = [];
         let activeTableInstance = null;
         let trendChartObj = null;
         let missionChartObj = null;
         let geoChartObj = null;
 
-        // Initialize App on DOM Load
         document.addEventListener("DOMContentLoaded", () => {
             Papa.parse(csvUrl, {
                 download: true,
@@ -153,18 +142,28 @@
             });
         });
 
-        // Parse and standardize raw incoming spreadsheet structures
         function processDataset(data) {
+            // Flexible matching for column header key variations
             rawDataset = data.filter(row => {
-                // Eliminate total aggregation rows or broken records from calculations
-                return row.Mode && row.FY && row['Total'] !== undefined && row['Prog Name'];
+                const modeKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'mode');
+                const fyKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'fy' || k.trim().toLowerCase() === 'year');
+                return row[modeKey] && row[fyKey];
             }).map((row, index) => {
-                // Ensure unique ID indexing for data frameworks
                 row.id = index;
-                row.Total = parseInt(row.Total) || 0;
                 
-                // Categorize parent mission portfolio logically based on text signatures
-                const progUpper = row['Prog Name'].toUpperCase();
+                // Unify common dynamic keys to internal constants
+                const originalModeKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'mode');
+                const originalFyKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'fy' || k.trim().toLowerCase() === 'year');
+                const originalTotalKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'total');
+                const originalProgKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'prog name' || k.trim().toLowerCase() === 'program name');
+
+                row.NormalizedMode = row[originalModeKey] ? row[originalModeKey].trim() : 'Unknown';
+                row.NormalizedFY = row[originalFyKey] ? row[originalFyKey].trim() : 'Unknown';
+                row.Total = parseInt(row[originalTotalKey]) || 0;
+                row.NormalizedProgName = row[originalProgKey] ? row[originalProgKey].trim() : '';
+                
+                // Mission Categorization Rule
+                const progUpper = row.NormalizedProgName.toUpperCase();
                 const nameUpper = row['Training Name'] ? row['Training Name'].toUpperCase() : '';
                 
                 if (progUpper.includes("JJM") || nameUpper.includes("JJM")) {
@@ -184,9 +183,8 @@
             attachInputEventBindings();
         }
 
-        // Dynamically build filter UI metrics based on discovered data boundaries
         function populateFilterSelectors() {
-            const fiscalYears = [...new Set(rawDataset.map(item => item.FY))].sort();
+            const fiscalYears = [...new Set(rawDataset.map(item => item.NormalizedFY))].sort();
             const fySelect = document.getElementById("filter-fy");
             fiscalYears.forEach(fy => {
                 if(fy.trim()) {
@@ -198,36 +196,25 @@
             });
         }
 
-        // Attach layout controllers to calculations pipeline
         function attachInputEventBindings() {
             document.getElementById("filter-fy").addEventListener("change", executePipelineRefresh);
             document.getElementById("filter-mode").addEventListener("change", executePipelineRefresh);
-            document.getElementById("filter-mission").addEventListener("change", executePipelineRefresh);
-            document.getElementById("search-table").addEventListener("input", (e) => {
-                if (activeTableInstance) {
-                    // Update tabular layout directly via text query parameters
-                    activeTableInstance.setFilter("Training Name", "like", e.target.value);
-                }
-            });
+            document.getElementById("filter-mission-search").addEventListener("input", executePipelineRefresh);
         }
 
-        // Compute filters and push calculated state to view engines
         function executePipelineRefresh() {
             const selectedFy = document.getElementById("filter-fy").value;
             const selectedMode = document.getElementById("filter-mode").value;
-            const selectedMission = document.getElementById("filter-mission").value;
+            const searchMissionText = document.getElementById("filter-mission-search").value.trim().toLowerCase();
 
-            // Apply boolean intersections across multi-axis rules
             const filteredData = rawDataset.filter(row => {
-                const matchesFy = (selectedFy === "ALL" || row.FY === selectedFy);
-                const matchesMode = (selectedMode === "ALL" || row.Mode.trim().toLowerCase() === selectedMode.toLowerCase());
-                
-                let matchesMission = true;
-                if (selectedMission === "JJM") matchesMission = (row.calculatedMission === "Jal Jeevan Mission (JJM)");
-                else if (selectedMission === "SBM") matchesMission = (row.calculatedMission === "Swachh Bharat Mission (SBM-G)");
-                else if (selectedMission === "OTHER") matchesMission = (row.calculatedMission === "Other Initiatives");
+                const matchesFy = (selectedFy === "ALL" || row.NormalizedFY === selectedFy);
+                const matchesMode = (selectedMode === "ALL" || row.NormalizedMode.toLowerCase() === selectedMode.toLowerCase());
+                const matchesMissionText = (!searchMissionText || 
+                                            row.NormalizedProgName.toLowerCase().includes(searchMissionText) || 
+                                            row.calculatedMission.toLowerCase().includes(searchMissionText));
 
-                return matchesFy && matchesMode && matchesMission;
+                return matchesFy && matchesMode && matchesMissionText;
             });
 
             updateKpiDeck(filteredData);
@@ -238,12 +225,11 @@
             }
         }
 
-        // Aggregate key metric counts for upper screen blocks
         function updateKpiDeck(data) {
             const totalTrained = data.reduce((sum, r) => sum + r.Total, 0);
             const totalProgs = data.length;
-            const physicalTrained = data.filter(r => r.Mode.trim().toLowerCase() === "physical").reduce((sum, r) => sum + r.Total, 0);
-            const onlineTrained = data.filter(r => r.Mode.trim().toLowerCase() === "online").reduce((sum, r) => sum + r.Total, 0);
+            const physicalTrained = data.filter(r => r.NormalizedMode.toLowerCase() === "physical").reduce((sum, r) => sum + r.Total, 0);
+            const onlineTrained = data.filter(r => r.NormalizedMode.toLowerCase() === "online").reduce((sum, r) => sum + r.Total, 0);
 
             document.getElementById("kpi-total-trained").textContent = totalTrained.toLocaleString('en-IN');
             document.getElementById("kpi-total-progs").textContent = totalProgs.toLocaleString('en-IN');
@@ -251,9 +237,7 @@
             document.getElementById("kpi-online-trained").textContent = onlineTrained.toLocaleString('en-IN');
         }
 
-        // Scaffold chart instances with empty data bounds
         function initializeVisualizationEngines() {
-            // Trend Lines
             const trendCtx = document.getElementById('chart-trends').getContext('2d');
             trendChartObj = new Chart(trendCtx, {
                 type: 'bar',
@@ -261,7 +245,6 @@
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
             });
 
-            // Portfolio Mix
             const missionCtx = document.getElementById('chart-mission').getContext('2d');
             missionChartObj = new Chart(missionCtx, {
                 type: 'doughnut',
@@ -269,7 +252,6 @@
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
-            // Geographic Breakdown
             const geoCtx = document.getElementById('chart-geography').getContext('2d');
             geoChartObj = new Chart(geoCtx, {
                 type: 'bar',
@@ -278,18 +260,21 @@
             });
         }
 
-        // Recalculate arrays and pass to rendering charts
         function refreshChartVisualizations(data) {
-            // 1. Process Trend Visuals
-            const uniqueFys = [...new Set(rawDataset.map(item => item.FY))].sort();
-            const physicalTrend = uniqueFys.map(fy => data.filter(r => r.FY === fy && r.Mode.trim().toLowerCase() === "physical").reduce((sum, r) => sum + r.Total, 0));
-            const onlineTrend = uniqueFys.map(fy => data.filter(r => r.FY === fy && r.Mode.trim().toLowerCase() === "online").reduce((sum, r) => sum + r.Total, 0));
+            // 1. Process Multi-Mode Trend Visuals
+            const uniqueFys = [...new Set(rawDataset.map(item => item.NormalizedFY))].sort();
+            const physicalTrend = uniqueFys.map(fy => data.filter(r => r.NormalizedFY === fy && r.NormalizedMode.toLowerCase() === "physical").reduce((sum, r) => sum + r.Total, 0));
+            const onlineTrend = uniqueFys.map(fy => data.filter(r => r.NormalizedFY === fy && r.NormalizedMode.toLowerCase() === "online").reduce((sum, r) => sum + r.Total, 0));
+            const offsiteTrend = uniqueFys.map(fy => data.filter(r => r.NormalizedFY === fy && r.NormalizedMode.toLowerCase() === "offsite").reduce((sum, r) => sum + r.Total, 0));
+            const certTrend = uniqueFys.map(fy => data.filter(r => r.NormalizedFY === fy && r.NormalizedMode.toLowerCase() === "certificate course").reduce((sum, r) => sum + r.Total, 0));
 
             trendChartObj.data = {
                 labels: uniqueFys,
                 datasets: [
-                    { label: 'Physical Mode', data: physicalTrend, backgroundColor: '#2563eb' },
-                    { label: 'Online Mode', data: onlineTrend, backgroundColor: '#f59e0b' }
+                    { label: 'Physical', data: physicalTrend, backgroundColor: '#2563eb' },
+                    { label: 'Online', data: onlineTrend, backgroundColor: '#f59e0b' },
+                    { label: 'Offsite', data: offsiteTrend, backgroundColor: '#10b981' },
+                    { label: 'Certificate Course', data: certTrend, backgroundColor: '#ec4899' }
                 ]
             };
             trendChartObj.update();
@@ -320,7 +305,7 @@
 
             const sortedStates = Object.entries(stateSums)
                 .sort((a, b) => b[1] - a[1])
-                .slice(0, 15); // Dynamic slice for Top 15 visual limits
+                .slice(0, 15);
 
             geoChartObj.data = {
                 labels: sortedStates.map(x => x[0]),
@@ -333,7 +318,6 @@
             geoChartObj.update();
         }
 
-        // Render tabular grid element using Tabulator
         function renderMasterTable() {
             activeTableInstance = new Tabulator("#master-table-container", {
                 data: [],
@@ -345,15 +329,14 @@
                 movableColumns: true,
                 columns: [
                     {formatter: "responsiveCollapse", width: 30, minWidth: 30, hozAlign: "center", resizable: false, headerSort: false},
-                    {title: "FY", field: "FY", width: 90, hozAlign: "center"},
-                    {title: "Mode", field: "Mode", width: 110, hozAlign: "center"},
-                    {title: "Program Portfolio", field: "Prog Name", width: 150, tooltip: true},
+                    {title: "Year", field: "NormalizedFY", width: 90, hozAlign: "center"},
+                    {title: "Mode", field: "NormalizedMode", width: 130, hozAlign: "center"},
+                    {title: "Program Portfolio", field: "NormalizedProgName", width: 170, tooltip: true},
                     {title: "Training Target Subject", field: "Training Name", width: 320, tooltip: true},
                     {title: "Date", field: "Training Date", width: 120, hozAlign: "center"},
                     {title: "Total Trainees", field: "Total", width: 140, hozAlign: "right", formatter: "money", formatterParams: {precision: 0}}
                 ],
                 rowFormatter: function(row) {
-                    // Create sub-element detail layouts to expose spatial breakdowns on tap/click
                     const rowData = row.getData();
                     const holderEl = document.createElement("div");
                     const tableEl = document.createElement("div");
@@ -383,7 +366,6 @@
                     holderEl.style.display = "none";
                 },
                 rowClick: function(e, row) {
-                    // Simple show/hide accordion toggle wrapper
                     const element = row.getElement().querySelector(".bg-slate-100\\/80");
                     if (element) {
                         element.style.display = element.style.display === "none" ? "block" : "none";
