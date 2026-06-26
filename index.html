@@ -5,18 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPM NIWAS Capacity Building Dashboard</title>
     
-    <!-- CSS Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://unpkg.com/tabulator-tables@5.5.2/dist/css/tabulator_tailwindcss.min.css" rel="stylesheet">
     
-    <!-- JS Dependencies -->
     <script src="https://unpkg.com/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased">
 
-    <!-- Top Navigation Header -->
     <header class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div>
@@ -31,7 +28,6 @@
 
     <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-        <!-- Control Station (Filters) -->
         <section class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-end">
             <div class="w-full md:w-1/3">
                 <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Search by Year</label>
@@ -55,8 +51,7 @@
             </div>
         </section>
 
-        <!-- KPI Summary Deck -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-blue-600">
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Officials Trained</p>
                 <h3 id="kpi-total-trained" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
@@ -66,32 +61,24 @@
                 <h3 id="kpi-total-progs" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
             </div>
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-emerald-600">
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Physical Class Trainees</p>
-                <h3 id="kpi-physical-trained" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-amber-500">
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Online Academy Trainees</p>
-                <h3 id="kpi-online-trained" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Filter View Count</p>
+                <h3 id="kpi-filtered-count" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
             </div>
         </section>
 
-        <!-- Analytics Visual Layer -->
         <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Growth Trends Chart -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 lg:col-span-2 flex flex-col justify-between">
                 <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">FY-wise trend</h4>
                 <div class="relative h-64 w-full">
                     <canvas id="chart-trends"></canvas>
                 </div>
             </div>
-            <!-- Mission Distribution Chart -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
                 <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Mission wise</h4>
                 <div class="relative h-64 w-full flex justify-center">
                     <canvas id="chart-mission"></canvas>
                 </div>
             </div>
-            <!-- Geographic Footprint Chart -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 lg:col-span-3 flex flex-col justify-between">
                 <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Geographic Footprint (Top 15 States by Participant Deployment)</h4>
                 <div class="relative h-80 w-full">
@@ -100,7 +87,6 @@
             </div>
         </section>
 
-        <!-- Master Information Ledger -->
         <section class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
             <div class="flex justify-between items-center mb-4">
                 <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide">Master Program Ledger</h4>
@@ -137,34 +123,36 @@
                     processDataset(results.data);
                 },
                 error: function(err) {
-                    console.error("Critical Failure retrieving CSV from remote cloud architecture:", err);
+                    console.error("Failure retrieving CSV:", err);
                 }
             });
         });
 
         function processDataset(data) {
-            // Flexible matching for column header key variations
             rawDataset = data.filter(row => {
-                const modeKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'mode');
-                const fyKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'fy' || k.trim().toLowerCase() === 'year');
-                return row[modeKey] && row[fyKey];
+                // Keep rows that have valid data structures
+                const keys = Object.keys(row).map(k => k.trim().toLowerCase());
+                return keys.includes('mode') || keys.includes('fy') || keys.includes('year');
             }).map((row, index) => {
                 row.id = index;
                 
-                // Unify common dynamic keys to internal constants
-                const originalModeKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'mode');
-                const originalFyKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'fy' || k.trim().toLowerCase() === 'year');
-                const originalTotalKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'total');
-                const originalProgKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'prog name' || k.trim().toLowerCase() === 'program name');
+                // Case-insensitive key binding fallback mechanics
+                const modeKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'mode') || 'Mode';
+                const fyKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'fy' || k.trim().toLowerCase() === 'year') || 'FY';
+                const totalKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'total') || 'Total';
+                const progKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'prog name' || k.trim().toLowerCase() === 'program name') || 'Prog Name';
+                const trainKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'training name') || 'Training Name';
+                const dateKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'training date') || 'Training Date';
 
-                row.NormalizedMode = row[originalModeKey] ? row[originalModeKey].trim() : 'Unknown';
-                row.NormalizedFY = row[originalFyKey] ? row[originalFyKey].trim() : 'Unknown';
-                row.Total = parseInt(row[originalTotalKey]) || 0;
-                row.NormalizedProgName = row[originalProgKey] ? row[originalProgKey].trim() : '';
+                row.NormalizedMode = row[modeKey] ? row[modeKey].trim() : 'Unknown';
+                row.NormalizedFY = row[fyKey] ? row[fyKey].trim() : 'Unknown';
+                row.Total = parseInt(row[totalKey]) || 0;
+                row.NormalizedProgName = row[progKey] ? row[progKey].trim() : '';
+                row.NormalizedTrainingName = row[trainKey] ? row[trainKey].trim() : '';
+                row.NormalizedTrainingDate = row[dateKey] ? row[dateKey].trim() : '';
                 
-                // Mission Categorization Rule
                 const progUpper = row.NormalizedProgName.toUpperCase();
-                const nameUpper = row['Training Name'] ? row['Training Name'].toUpperCase() : '';
+                const nameUpper = row.NormalizedTrainingName.toUpperCase();
                 
                 if (progUpper.includes("JJM") || nameUpper.includes("JJM")) {
                     row.calculatedMission = "Jal Jeevan Mission (JJM)";
@@ -184,15 +172,17 @@
         }
 
         function populateFilterSelectors() {
-            const fiscalYears = [...new Set(rawDataset.map(item => item.NormalizedFY))].sort();
+            const fiscalYears = [...new Set(rawDataset.map(item => item.NormalizedFY))].filter(Boolean).sort();
             const fySelect = document.getElementById("filter-fy");
+            
+            // Wipe out existing options except the first "All Years" selection
+            fySelect.innerHTML = '<option value="ALL">All Years</option>';
+            
             fiscalYears.forEach(fy => {
-                if(fy.trim()) {
-                    let opt = document.createElement("option");
-                    opt.value = fy;
-                    opt.textContent = fy;
-                    fySelect.appendChild(opt);
-                }
+                let opt = document.createElement("option");
+                opt.value = fy;
+                opt.textContent = fy;
+                fySelect.appendChild(opt);
             });
         }
 
@@ -212,7 +202,8 @@
                 const matchesMode = (selectedMode === "ALL" || row.NormalizedMode.toLowerCase() === selectedMode.toLowerCase());
                 const matchesMissionText = (!searchMissionText || 
                                             row.NormalizedProgName.toLowerCase().includes(searchMissionText) || 
-                                            row.calculatedMission.toLowerCase().includes(searchMissionText));
+                                            row.calculatedMission.toLowerCase().includes(searchMissionText) ||
+                                            row.NormalizedTrainingName.toLowerCase().includes(searchMissionText));
 
                 return matchesFy && matchesMode && matchesMissionText;
             });
@@ -228,13 +219,10 @@
         function updateKpiDeck(data) {
             const totalTrained = data.reduce((sum, r) => sum + r.Total, 0);
             const totalProgs = data.length;
-            const physicalTrained = data.filter(r => r.NormalizedMode.toLowerCase() === "physical").reduce((sum, r) => sum + r.Total, 0);
-            const onlineTrained = data.filter(r => r.NormalizedMode.toLowerCase() === "online").reduce((sum, r) => sum + r.Total, 0);
 
             document.getElementById("kpi-total-trained").textContent = totalTrained.toLocaleString('en-IN');
             document.getElementById("kpi-total-progs").textContent = totalProgs.toLocaleString('en-IN');
-            document.getElementById("kpi-physical-trained").textContent = physicalTrained.toLocaleString('en-IN');
-            document.getElementById("kpi-online-trained").textContent = onlineTrained.toLocaleString('en-IN');
+            document.getElementById("kpi-filtered-count").textContent = data.length.toLocaleString('en-IN');
         }
 
         function initializeVisualizationEngines() {
@@ -261,8 +249,7 @@
         }
 
         function refreshChartVisualizations(data) {
-            // 1. Process Multi-Mode Trend Visuals
-            const uniqueFys = [...new Set(rawDataset.map(item => item.NormalizedFY))].sort();
+            const uniqueFys = [...new Set(rawDataset.map(item => item.NormalizedFY))].filter(Boolean).sort();
             const physicalTrend = uniqueFys.map(fy => data.filter(r => r.NormalizedFY === fy && r.NormalizedMode.toLowerCase() === "physical").reduce((sum, r) => sum + r.Total, 0));
             const onlineTrend = uniqueFys.map(fy => data.filter(r => r.NormalizedFY === fy && r.NormalizedMode.toLowerCase() === "online").reduce((sum, r) => sum + r.Total, 0));
             const offsiteTrend = uniqueFys.map(fy => data.filter(r => r.NormalizedFY === fy && r.NormalizedMode.toLowerCase() === "offsite").reduce((sum, r) => sum + r.Total, 0));
@@ -279,7 +266,6 @@
             };
             trendChartObj.update();
 
-            // 2. Process Mission Allocation Mix
             const missionBuckets = ["Jal Jeevan Mission (JJM)", "Swachh Bharat Mission (SBM-G)", "Other Initiatives"];
             const missionCounts = missionBuckets.map(bucket => data.filter(r => r.calculatedMission === bucket).reduce((sum, r) => sum + r.Total, 0));
 
@@ -292,7 +278,6 @@
             };
             missionChartObj.update();
 
-            // 3. Process State Array Transformations
             const stateSums = {};
             stateColumns.forEach(state => { stateSums[state] = 0; });
             
@@ -332,8 +317,8 @@
                     {title: "Year", field: "NormalizedFY", width: 90, hozAlign: "center"},
                     {title: "Mode", field: "NormalizedMode", width: 130, hozAlign: "center"},
                     {title: "Program Portfolio", field: "NormalizedProgName", width: 170, tooltip: true},
-                    {title: "Training Target Subject", field: "Training Name", width: 320, tooltip: true},
-                    {title: "Date", field: "Training Date", width: 120, hozAlign: "center"},
+                    {title: "Training Target Subject", field: "NormalizedTrainingName", width: 320, tooltip: true},
+                    {title: "Date", field: "NormalizedTrainingDate", width: 120, hozAlign: "center"},
                     {title: "Total Trainees", field: "Total", width: 140, hozAlign: "right", formatter: "money", formatterParams: {precision: 0}}
                 ],
                 rowFormatter: function(row) {
@@ -358,7 +343,7 @@
                         tableEl.className = "flex flex-wrap gap-2";
                         tableEl.innerHTML = contributions.join("");
                     } else {
-                        tableEl.innerHTML = `<span class="text-slate-400 italic">No localized state data recorded for this transaction summary row.</span>`;
+                        tableEl.innerHTML = `<span class="text-slate-400 italic">No localized state data recorded for this row.</span>`;
                     }
 
                     holderEl.appendChild(tableEl);
