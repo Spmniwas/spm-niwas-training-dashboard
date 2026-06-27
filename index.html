@@ -28,26 +28,36 @@
 
     <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-        <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-end">
-            <div class="w-full md:w-1/3">
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Search by Year</label>
+        <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="flex flex-col justify-end">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Search by Year</label>
                 <select id="filter-fy" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-900 text-sm font-medium focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer">
-                    <option value="ALL" class="text-slate-900">All Years</option>
+                    <option value="ALL">All Years</option>
                 </select>
             </div>
-            <div class="w-full md:w-1/3">
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Training Mode</label>
-                <select id="filter-mode" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-900 text-sm font-medium focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer">
-                    <option value="ALL" class="text-slate-900">All Modes</option>
+
+            <div class="flex flex-col justify-end">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Search by Mission</label>
+                <select id="filter-mission-dropdown" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-900 text-sm font-medium focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer">
+                    <option value="ALL">Search by Mission</option>
                 </select>
             </div>
-            <div class="w-full md:w-1/3">
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Search by Mission name</label>
-                <input type="text" id="filter-mission-search" placeholder="Type mission name (e.g., JJM, SBM)..." class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-900 placeholder-slate-400 text-sm font-medium focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+
+            <div class="flex flex-col justify-end">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">State Wise Performance Metrics</label>
+                <select id="metric-state-select" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-900 text-sm font-medium focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer">
+                    <option value="NONE">Select State for Metrics...</option>
+                </select>
+            </div>
+
+            <div class="md:col-span-3 border-t border-slate-100 pt-4">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Training Mode (Select Multiple)</label>
+                <div id="mode-checkbox-container" class="flex flex-wrap gap-4 text-sm font-medium text-slate-700">
+                    </div>
             </div>
         </section>
 
-        <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <section id="kpi-deck-wrapper" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-blue-600">
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Officials Trained</p>
                 <h3 id="kpi-total-trained" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
@@ -56,9 +66,19 @@
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">No. of Trainings conducted</p>
                 <h3 id="kpi-total-progs" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
             </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-emerald-600">
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Filter View Count</p>
-                <h3 id="kpi-filtered-count" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
+        </section>
+
+        <section id="state-metric-panel" class="hidden bg-gradient-to-r from-slate-800 to-indigo-900 text-white p-5 rounded-xl shadow-sm space-y-2 animate-fade-in">
+            <h4 id="state-metric-title" class="text-sm font-bold uppercase tracking-wider text-indigo-200">State Metrics</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-1">
+                <div>
+                    <span class="text-xs text-slate-300 block">Participants Trained from State:</span>
+                    <span id="state-metric-participants" class="text-2xl font-black text-white">0</span>
+                </div>
+                <div>
+                    <span class="text-xs text-slate-300 block">Total Training Sessions Attended:</span>
+                    <span id="state-metric-trainings" class="text-2xl font-black text-white">0</span>
+                </div>
             </div>
         </section>
 
@@ -76,8 +96,8 @@
                 </div>
             </div>
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 lg:col-span-3 flex flex-col justify-between">
-                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Geographic Footprint (Top 15 States by Participant Deployment)</h4>
-                <div class="relative h-80 w-full">
+                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Geographic Footprint (Top 10 States by Participant Deployment)</h4>
+                <div class="relative h-72 w-full">
                     <canvas id="chart-geography"></canvas>
                 </div>
             </div>
@@ -142,7 +162,6 @@
                 const startDateKey = findKey(['start date', 'startdate']);
                 const endDateKey = findKey(['end date', 'enddate']);
 
-                // Auto-trim values to prevent space bugs
                 row.NormalizedMode = row[modeKey] ? row[modeKey].trim() : 'Unknown';
                 row.NormalizedFY = row[fyKey] ? row[fyKey].trim() : 'Unknown';
                 row.Total = parseInt(row[totalKey]) || 0;
@@ -164,74 +183,136 @@
                 return row;
             });
 
-            populateFilterSelectors();
+            populateFilterControls();
             initializeVisualizationEngines();
             renderMasterTable();
             executePipelineRefresh();
-            attachInputEventBindings();
         }
 
-        function populateFilterSelectors() {
-            // 1. Dynamic Fiscal Years Extraction
+        function populateFilterControls() {
+            // 1. Fiscal Years Selector Options
             const fiscalYears = [...new Set(rawDataset.map(item => item.NormalizedFY))].filter(Boolean).sort();
             const fySelect = document.getElementById("filter-fy");
-            fySelect.innerHTML = '<option value="ALL" class="text-slate-900">All Years</option>';
+            fySelect.innerHTML = '<option value="ALL">All Years</option>';
             fiscalYears.forEach(fy => {
                 let opt = document.createElement("option");
-                opt.value = fy;
-                opt.textContent = fy;
-                opt.className = "text-slate-900";
+                opt.value = fy; opt.textContent = fy;
                 fySelect.appendChild(opt);
             });
 
-            // 2. DYNAMIC MODE SELECTION EXTRACTION (Fixes missing items bug)
-            const absoluteModes = [...new Set(rawDataset.map(item => item.NormalizedMode))].filter(Boolean).sort();
-            const modeSelect = document.getElementById("filter-mode");
-            modeSelect.innerHTML = '<option value="ALL" class="text-slate-900">All Modes</option>';
-            absoluteModes.forEach(mode => {
+            // 2. Mission Filter Dropdown Selector Options
+            const distinctMissions = [...new Set(rawDataset.map(item => item.calculatedMission))].filter(Boolean).sort();
+            const missionSelect = document.getElementById("filter-mission-dropdown");
+            missionSelect.innerHTML = '<option value="ALL">Search by Mission</option>';
+            distinctMissions.forEach(mission => {
                 let opt = document.createElement("option");
-                opt.value = mode;
-                opt.textContent = mode;
-                opt.className = "text-slate-900";
-                modeSelect.appendChild(opt);
+                opt.value = mission; opt.textContent = mission;
+                missionSelect.appendChild(opt);
             });
-        }
 
-        function attachInputEventBindings() {
-            document.getElementById("filter-fy").addEventListener("change", executePipelineRefresh);
-            document.getElementById("filter-mode").addEventListener("change", executePipelineRefresh);
-            document.getElementById("filter-mission-search").addEventListener("input", executePipelineRefresh);
+            // 3. Populate State Dropdown Options for performance analysis
+            const stateSelect = document.getElementById("metric-state-select");
+            stateSelect.innerHTML = '<option value="NONE">Select State for Metrics...</option>';
+            stateColumns.sort().forEach(state => {
+                let opt = document.createElement("option");
+                opt.value = state; opt.textContent = state;
+                stateSelect.appendChild(opt);
+            });
+
+            // 4. Generate Training Mode Checkboxes (Multi-Select Architecture)
+            const uniqueModes = [...new Set(rawDataset.map(item => item.NormalizedMode))].filter(Boolean).sort();
+            const checkboxContainer = document.getElementById("mode-checkbox-container");
+            checkboxContainer.innerHTML = ""; 
+
+            uniqueModes.forEach((mode, index) => {
+                const label = document.createElement("label");
+                label.className = "inline-flex items-center space-x-2 bg-slate-100 border border-slate-300 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-slate-200 transition-all select-none";
+                
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.value = mode;
+                checkbox.checked = true; // Default load everything checked
+                checkbox.className = "rounded text-blue-600 focus:ring-blue-400 filter-mode-checkbox h-4 w-4";
+                
+                checkbox.addEventListener("change", executePipelineRefresh);
+                
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(mode));
+                checkboxContainer.appendChild(label);
+            });
+
+            // Attach event bindings to selectors
+            fySelect.addEventListener("change", executePipelineRefresh);
+            missionSelect.addEventListener("change", executePipelineRefresh);
+            stateSelect.addEventListener("change", calculateIndividualStateMetrics);
         }
 
         function executePipelineRefresh() {
             const selectedFy = document.getElementById("filter-fy").value;
-            const selectedMode = document.getElementById("filter-mode").value;
-            const searchMissionText = document.getElementById("filter-mission-search").value.trim().toLowerCase();
+            const selectedMission = document.getElementById("filter-mission-dropdown").value;
+            
+            // Extract all actively checked modes from checkbox array
+            const checkedBoxes = Array.from(document.querySelectorAll(".filter-mode-checkbox:checked"));
+            const checkedModes = checkedBoxes.map(box => box.value);
 
             const filteredData = rawDataset.filter(row => {
                 const matchesFy = (selectedFy === "ALL" || row.NormalizedFY === selectedFy);
-                const matchesMode = (selectedMode === "ALL" || row.NormalizedMode === selectedMode);
-                const matchesMissionText = (!searchMissionText || 
-                                            row.NormalizedProgName.toLowerCase().includes(searchMissionText) || 
-                                            row.calculatedMission.toLowerCase().includes(searchMissionText) ||
-                                            row.NormalizedTrainingName.toLowerCase().includes(searchMissionText));
+                const matchesMission = (selectedMission === "ALL" || row.calculatedMission === selectedMission);
+                const matchesMode = checkedModes.includes(row.NormalizedMode);
 
-                return matchesFy && matchesMode && matchesMissionText;
+                return matchesFy && matchesMission && matchesMode;
             });
 
-            updateKpiDeck(filteredData);
+            // Core Counters update dynamically based on checked metrics rule
+            const totalTrained = filteredData.reduce((sum, r) => sum + r.Total, 0);
+            document.getElementById("kpi-total-trained").textContent = totalTrained.toLocaleString('en-IN');
+            document.getElementById("kpi-total-progs").textContent = filteredData.length.toLocaleString('en-IN');
+
             refreshChartVisualizations(filteredData);
+            calculateIndividualStateMetrics(); // Keep comparative state panel verified
             
             if (activeTableInstance) {
                 activeTableInstance.setData(filteredData);
             }
         }
 
-        function updateKpiDeck(data) {
-            const totalTrained = data.reduce((sum, r) => sum + r.Total, 0);
-            document.getElementById("kpi-total-trained").textContent = totalTrained.toLocaleString('en-IN');
-            document.getElementById("kpi-total-progs").textContent = rawDataset.length.toLocaleString('en-IN');
-            document.getElementById("kpi-filtered-count").textContent = data.length.toLocaleString('en-IN');
+        // Dedicated state calculations algorithm panel
+        function calculateIndividualStateMetrics() {
+            const selectedState = document.getElementById("metric-state-select").value;
+            const statePanel = document.getElementById("state-metric-panel");
+
+            if (selectedState === "NONE") {
+                statePanel.classList.add("hidden");
+                return;
+            }
+
+            // Recalculate context parameters based on active system data rows
+            const selectedFy = document.getElementById("filter-fy").value;
+            const selectedMission = document.getElementById("filter-mission-dropdown").value;
+            const checkedModes = Array.from(document.querySelectorAll(".filter-mode-checkbox:checked")).map(box => box.value);
+
+            const currentlyFilteredData = rawDataset.filter(row => {
+                return (selectedFy === "ALL" || row.NormalizedFY === selectedFy) &&
+                       (selectedMission === "ALL" || row.calculatedMission === selectedMission) &&
+                       checkedModes.includes(row.NormalizedMode);
+            });
+
+            let totalTraineesFromState = 0;
+            let totalTrainingsAttendedByState = 0;
+
+            currentlyFilteredData.forEach(row => {
+                const stateCount = parseInt(row[selectedState]) || 0;
+                if (stateCount > 0) {
+                    totalTraineesFromState += stateCount;
+                    totalTrainingsAttendedByState++; // Increment if state had >0 officials present
+                }
+            });
+
+            document.getElementById("state-metric-title").textContent = `${selectedState} - Performance Breakdown`;
+            document.getElementById("state-metric-participants").textContent = totalTraineesFromState.toLocaleString('en-IN');
+            document.getElementById("state-metric-trainings").textContent = totalTrainingsAttendedByState.toLocaleString('en-IN');
+            
+            statePanel.classList.remove("hidden");
         }
 
         function initializeVisualizationEngines() {
@@ -261,7 +342,6 @@
             const uniqueFys = [...new Set(rawDataset.map(item => item.NormalizedFY))].filter(Boolean).sort();
             const uniqueModes = [...new Set(rawDataset.map(item => item.NormalizedMode))].filter(Boolean).sort();
             
-            // Generate trend datasets completely dynamically based on found modes
             const colors = ['#2563eb', '#f59e0b', '#10b981', '#ec4899', '#8b5cf6', '#3b82f6'];
             const trendDatasets = uniqueModes.map((mode, i) => {
                 return {
@@ -271,10 +351,7 @@
                 };
             });
 
-            trendChartObj.data = {
-                labels: uniqueFys,
-                datasets: trendDatasets
-            };
+            trendChartObj.data = { labels: uniqueFys, datasets: trendDatasets };
             trendChartObj.update();
 
             const missionBuckets = ["Jal Jeevan Mission (JJM)", "Swachh Bharat Mission (SBM-G)", "Other Initiatives"];
@@ -282,26 +359,22 @@
 
             missionChartObj.data = {
                 labels: ['JJM', 'SBM-G', 'Other'],
-                datasets: [{
-                    data: missionCounts,
-                    backgroundColor: ['#1d4ed8', '#10b981', '#64748b']
-                }]
+                datasets: [{ data: missionCounts, backgroundColor: ['#1d4ed8', '#10b981', '#64748b'] }]
             };
             missionChartObj.update();
 
             const stateSums = {};
             stateColumns.forEach(state => { stateSums[state] = 0; });
-            
             data.forEach(row => {
                 stateColumns.forEach(state => {
-                    const count = parseInt(row[state]) || 0;
-                    stateSums[state] += count;
+                    stateSums[state] += (parseInt(row[state]) || 0);
                 });
             });
 
+            // Isolation mapping adjusted strictly to render the Top 10 States
             const sortedStates = Object.entries(stateSums)
                 .sort((a, b) => b[1] - a[1])
-                .slice(0, 15);
+                .slice(0, 10);
 
             geoChartObj.data = {
                 labels: sortedStates.map(x => x[0]),
@@ -338,9 +411,7 @@
                     const holderEl = document.createElement("div");
                     const tableEl = document.createElement("div");
 
-                    holderEl.style.boxSizing = "border-box";
-                    holderEl.style.padding = "12px";
-                    holderEl.className = "bg-slate-100/80 rounded-lg border border-slate-200 text-xs m-2";
+                    holderEl.className = "bg-slate-100/80 rounded-lg border border-slate-200 text-xs p-3 m-2";
                     holderEl.innerHTML = `<p class="font-bold text-slate-700 mb-2">Regional State Breakdowns (Non-Zero Counts)</p>`;
 
                     let contributions = [];
