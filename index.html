@@ -143,14 +143,19 @@
                 const totalKey = findKey(['total', 'total trained', 'total trainees']);
                 const progKey = findKey(['prog name', 'program name', 'progname']);
                 const trainKey = findKey(['training name', 'training subject']);
-                const dateKey = findKey(['training date', 'date']);
+                
+                // Track start and end dates distinctly
+                const startDateKey = findKey(['start date', 'startdate']);
+                const endDateKey = findKey(['end date', 'enddate']);
 
                 row.NormalizedMode = row[modeKey] ? row[modeKey].trim() : 'Unknown';
                 row.NormalizedFY = row[fyKey] ? row[fyKey].trim() : 'Unknown';
                 row.Total = parseInt(row[totalKey]) || 0;
                 row.NormalizedProgName = row[progKey] ? row[progKey].trim() : '';
                 row.NormalizedTrainingName = row[trainKey] ? row[trainKey].trim() : '';
-                row.NormalizedTrainingDate = row[dateKey] ? row[dateKey].trim() : '';
+                
+                row.NormalizedStartDate = row[startDateKey] ? row[startDateKey].trim() : '';
+                row.NormalizedEndDate = row[endDateKey] ? row[endDateKey].trim() : '';
                 
                 const progUpper = row.NormalizedProgName.toUpperCase();
                 const nameUpper = row.NormalizedTrainingName.toUpperCase();
@@ -312,12 +317,13 @@
                 movableColumns: true,
                 columns: [
                     {formatter: "responsiveCollapse", width: 30, minWidth: 30, hozAlign: "center", resizable: false, headerSort: false},
-                    {title: "Year", field: "NormalizedFY", width: 90, hozAlign: "center"},
-                    {title: "Mode", field: "NormalizedMode", width: 130, hozAlign: "center"},
-                    {title: "Program Portfolio", field: "NormalizedProgName", width: 170, tooltip: true},
-                    {title: "Training Target Subject", field: "NormalizedTrainingName", width: 320, tooltip: true},
-                    {title: "Date", field: "NormalizedTrainingDate", width: 120, hozAlign: "center"},
-                    {title: "Total Trainees", field: "Total", width: 140, hozAlign: "right", formatter: "money", formatterParams: {precision: 0}}
+                    {title: "Year", field: "NormalizedFY", width: 80, hozAlign: "center"},
+                    {title: "Mode", field: "NormalizedMode", width: 120, hozAlign: "center"},
+                    {title: "Program Portfolio", field: "NormalizedProgName", width: 150, tooltip: true},
+                    {title: "Training Target Subject", field: "NormalizedTrainingName", width: 280, tooltip: true},
+                    {title: "Start Date", field: "NormalizedStartDate", width: 110, hozAlign: "center"},
+                    {title: "End Date", field: "NormalizedEndDate", width: 110, hozAlign: "center"},
+                    {title: "Total Trainees", field: "Total", width: 130, hozAlign: "right", formatter: "money", formatterParams: {precision: 0}}
                 ],
                 rowFormatter: function(row) {
                     const rowData = row.getData();
