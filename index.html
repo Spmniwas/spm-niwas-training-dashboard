@@ -51,7 +51,7 @@
             </div>
         </section>
 
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-blue-600">
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Officials Trained</p>
                 <h3 id="kpi-total-trained" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
@@ -97,7 +97,8 @@
     </main>
 
     <script>
-        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSM4pDzELLAQqxIxXJ1J6OcvtUpTSWqGyXeCGmTPHrtJzN-3t1nCDy3ACwnRUMFm-TXDhNtKrR_Vxpl/pub?gid=1260538750&single=true&output=csv";
+        // Updated Live Data Publishing Endpoint
+        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSM4pDzELLAQqxIxXJ1J6OcvtUpTSWqGyXeCGmTPHrtJzN-3t1nCDy3ACwnRUMFm-TXDhNtKrR_Vxpl/pub?gid=1860593713&single=true&output=csv";
         
         const stateColumns = [
             "A&N Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chattisgarh", "Delhi", 
@@ -123,26 +124,29 @@
                     processDataset(results.data);
                 },
                 error: function(err) {
-                    console.error("Failure retrieving CSV:", err);
+                    console.error("Failure retrieving CSV Data Stream:", err);
                 }
             });
         });
 
         function processDataset(data) {
             rawDataset = data.filter(row => {
-                // Keep rows that have valid data structures
+                // Ensure row has keys before operating
                 const keys = Object.keys(row).map(k => k.trim().toLowerCase());
-                return keys.includes('mode') || keys.includes('fy') || keys.includes('year');
+                return keys.length > 0 && keys.some(k => k.includes('mode') || k.includes('fy') || k.includes('year'));
             }).map((row, index) => {
                 row.id = index;
                 
-                // Case-insensitive key binding fallback mechanics
-                const modeKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'mode') || 'Mode';
-                const fyKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'fy' || k.trim().toLowerCase() === 'year') || 'FY';
-                const totalKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'total') || 'Total';
-                const progKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'prog name' || k.trim().toLowerCase() === 'program name') || 'Prog Name';
-                const trainKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'training name') || 'Training Name';
-                const dateKey = Object.keys(row).find(k => k.trim().toLowerCase() === 'training date') || 'Training Date';
+                // Flexible normalized key mapping setup
+                const actualKeys = Object.keys(row);
+                const findKey = (targets) => actualKeys.find(k => targets.includes(k.trim().toLowerCase())) || '';
+
+                const modeKey = findKey(['mode']);
+                const fyKey = findKey(['fy', 'year', 'fiscal year']);
+                const totalKey = findKey(['total', 'total trained', 'total trainees']);
+                const progKey = findKey(['prog name', 'program name', 'progname']);
+                const trainKey = findKey(['training name', 'training subject']);
+                const dateKey = findKey(['training date', 'date']);
 
                 row.NormalizedMode = row[modeKey] ? row[modeKey].trim() : 'Unknown';
                 row.NormalizedFY = row[fyKey] ? row[fyKey].trim() : 'Unknown';
@@ -175,9 +179,7 @@
             const fiscalYears = [...new Set(rawDataset.map(item => item.NormalizedFY))].filter(Boolean).sort();
             const fySelect = document.getElementById("filter-fy");
             
-            // Wipe out existing options except the first "All Years" selection
             fySelect.innerHTML = '<option value="ALL">All Years</option>';
-            
             fiscalYears.forEach(fy => {
                 let opt = document.createElement("option");
                 opt.value = fy;
@@ -218,12 +220,14 @@
 
         function updateKpiDeck(data) {
             const totalTrained = data.reduce((sum, r) => sum + r.Total, 0);
-            const totalProgs = data.length;
-
             document.getElementById("kpi-total-trained").textContent = totalTrained.toLocaleString('en-IN');
-            document.getElementById("kpi-total-progs").textContent = totalProgs.toLocaleString('en-IN');
+            document.getElementById("kpi-total-progs").textContent = rawDataset.length.toLocaleString('en-IN');
             document.getElementById("kpi-filtered-count").textContent = data.length.toLocaleString('en-IN');
         }
+
+        if(typeof window.activeTrendChart === 'undefined') { window.activeTrendChart = null; }
+        if(typeof window.activeMissionChart === 'undefined') { window.activeMissionChart = null; }
+        if(typeof window.activeGeoChart === 'undefined') { window.activeGeoChart = null; }
 
         function initializeVisualizationEngines() {
             const trendCtx = document.getElementById('chart-trends').getContext('2d');
