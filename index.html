@@ -39,10 +39,6 @@
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Training Mode</label>
                 <select id="filter-mode" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-900 text-sm font-medium focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer">
                     <option value="ALL" class="text-slate-900">All Modes</option>
-                    <option value="Physical" class="text-slate-900">Physical</option>
-                    <option value="Online" class="text-slate-900">Online</option>
-                    <option value="Offsite" class="text-slate-900">Offsite</option>
-                    <option value="Certificate course" class="text-slate-900">Certificate course</option>
                 </select>
             </div>
             <div class="w-full md:w-1/3">
@@ -143,17 +139,15 @@
                 const totalKey = findKey(['total', 'total trained', 'total trainees']);
                 const progKey = findKey(['prog name', 'program name', 'progname']);
                 const trainKey = findKey(['training name', 'training subject']);
-                
-                // Track start and end dates distinctly
                 const startDateKey = findKey(['start date', 'startdate']);
                 const endDateKey = findKey(['end date', 'enddate']);
 
+                // Auto-trim values to prevent space bugs
                 row.NormalizedMode = row[modeKey] ? row[modeKey].trim() : 'Unknown';
                 row.NormalizedFY = row[fyKey] ? row[fyKey].trim() : 'Unknown';
                 row.Total = parseInt(row[totalKey]) || 0;
                 row.NormalizedProgName = row[progKey] ? row[progKey].trim() : '';
                 row.NormalizedTrainingName = row[trainKey] ? row[trainKey].trim() : '';
-                
                 row.NormalizedStartDate = row[startDateKey] ? row[startDateKey].trim() : '';
                 row.NormalizedEndDate = row[endDateKey] ? row[endDateKey].trim() : '';
                 
@@ -178,9 +172,9 @@
         }
 
         function populateFilterSelectors() {
+            // 1. Dynamic Fiscal Years Extraction
             const fiscalYears = [...new Set(rawDataset.map(item => item.NormalizedFY))].filter(Boolean).sort();
             const fySelect = document.getElementById("filter-fy");
-            
             fySelect.innerHTML = '<option value="ALL" class="text-slate-900">All Years</option>';
             fiscalYears.forEach(fy => {
                 let opt = document.createElement("option");
@@ -188,6 +182,18 @@
                 opt.textContent = fy;
                 opt.className = "text-slate-900";
                 fySelect.appendChild(opt);
+            });
+
+            // 2. DYNAMIC MODE SELECTION EXTRACTION (Fixes missing items bug)
+            const absoluteModes = [...new Set(rawDataset.map(item => item.NormalizedMode))].filter(Boolean).sort();
+            const modeSelect = document.getElementById("filter-mode");
+            modeSelect.innerHTML = '<option value="ALL" class="text-slate-900">All Modes</option>';
+            absoluteModes.forEach(mode => {
+                let opt = document.createElement("option");
+                opt.value = mode;
+                opt.textContent = mode;
+                opt.className = "text-slate-900";
+                modeSelect.appendChild(opt);
             });
         }
 
@@ -204,7 +210,7 @@
 
             const filteredData = rawDataset.filter(row => {
                 const matchesFy = (selectedFy === "ALL" || row.NormalizedFY === selectedFy);
-                const matchesMode = (selectedMode === "ALL" || row.NormalizedMode.toLowerCase() === selectedMode.toLowerCase());
+                const matchesMode = (selectedMode === "ALL" || row.NormalizedMode === selectedMode);
                 const matchesMissionText = (!searchMissionText || 
                                             row.NormalizedProgName.toLowerCase().includes(searchMissionText) || 
                                             row.calculatedMission.toLowerCase().includes(searchMissionText) ||
@@ -253,19 +259,21 @@
 
         function refreshChartVisualizations(data) {
             const uniqueFys = [...new Set(rawDataset.map(item => item.NormalizedFY))].filter(Boolean).sort();
-            const physicalTrend = uniqueFys.map(fy => data.filter(r => r.NormalizedFY === fy && r.NormalizedMode.toLowerCase() === "physical").reduce((sum, r) => sum + r.Total, 0));
-            const onlineTrend = uniqueFys.map(fy => data.filter(r => r.NormalizedFY === fy && r.NormalizedMode.toLowerCase() === "online").reduce((sum, r) => sum + r.Total, 0));
-            const offsiteTrend = uniqueFys.map(fy => data.filter(r => r.NormalizedFY === fy && r.NormalizedMode.toLowerCase() === "offsite").reduce((sum, r) => sum + r.Total, 0));
-            const certTrend = uniqueFys.map(fy => data.filter(r => r.NormalizedFY === fy && r.NormalizedMode.toLowerCase() === "certificate course").reduce((sum, r) => sum + r.Total, 0));
+            const uniqueModes = [...new Set(rawDataset.map(item => item.NormalizedMode))].filter(Boolean).sort();
+            
+            // Generate trend datasets completely dynamically based on found modes
+            const colors = ['#2563eb', '#f59e0b', '#10b981', '#ec4899', '#8b5cf6', '#3b82f6'];
+            const trendDatasets = uniqueModes.map((mode, i) => {
+                return {
+                    label: mode,
+                    data: uniqueFys.map(fy => data.filter(r => r.NormalizedFY === fy && r.NormalizedMode === mode).reduce((sum, r) => sum + r.Total, 0)),
+                    backgroundColor: colors[i % colors.length]
+                };
+            });
 
             trendChartObj.data = {
                 labels: uniqueFys,
-                datasets: [
-                    { label: 'Physical', data: physicalTrend, backgroundColor: '#2563eb' },
-                    { label: 'Online', data: onlineTrend, backgroundColor: '#f59e0b' },
-                    { label: 'Offsite', data: offsiteTrend, backgroundColor: '#10b981' },
-                    { label: 'Certificate Course', data: certTrend, backgroundColor: '#ec4899' }
-                ]
+                datasets: trendDatasets
             };
             trendChartObj.update();
 
