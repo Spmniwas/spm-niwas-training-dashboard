@@ -28,26 +28,26 @@
 
     <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-        <section class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-end">
+        <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-end">
             <div class="w-full md:w-1/3">
-                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Search by Year</label>
-                <select id="filter-fy" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                    <option value="ALL">All Years</option>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Search by Year</label>
+                <select id="filter-fy" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-900 text-sm font-medium focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer">
+                    <option value="ALL" class="text-slate-900">All Years</option>
                 </select>
             </div>
             <div class="w-full md:w-1/3">
-                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Training Mode</label>
-                <select id="filter-mode" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                    <option value="ALL">All Modes</option>
-                    <option value="Physical">Physical</option>
-                    <option value="Online">Online</option>
-                    <option value="Offsite">Offsite</option>
-                    <option value="Certificate course">Certificate course</option>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Training Mode</label>
+                <select id="filter-mode" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-900 text-sm font-medium focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer">
+                    <option value="ALL" class="text-slate-900">All Modes</option>
+                    <option value="Physical" class="text-slate-900">Physical</option>
+                    <option value="Online" class="text-slate-900">Online</option>
+                    <option value="Offsite" class="text-slate-900">Offsite</option>
+                    <option value="Certificate course" class="text-slate-900">Certificate course</option>
                 </select>
             </div>
             <div class="w-full md:w-1/3">
-                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Search by Mission name</label>
-                <input type="text" id="filter-mission-search" placeholder="Type mission name (e.g., JJM, SBM)..." class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Search by Mission name</label>
+                <input type="text" id="filter-mission-search" placeholder="Type mission name (e.g., JJM, SBM)..." class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-900 placeholder-slate-400 text-sm font-medium focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all">
             </div>
         </section>
 
@@ -97,7 +97,6 @@
     </main>
 
     <script>
-        // Updated Live Data Publishing Endpoint
         const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSM4pDzELLAQqxIxXJ1J6OcvtUpTSWqGyXeCGmTPHrtJzN-3t1nCDy3ACwnRUMFm-TXDhNtKrR_Vxpl/pub?gid=1860593713&single=true&output=csv";
         
         const stateColumns = [
@@ -131,13 +130,11 @@
 
         function processDataset(data) {
             rawDataset = data.filter(row => {
-                // Ensure row has keys before operating
                 const keys = Object.keys(row).map(k => k.trim().toLowerCase());
                 return keys.length > 0 && keys.some(k => k.includes('mode') || k.includes('fy') || k.includes('year'));
             }).map((row, index) => {
                 row.id = index;
                 
-                // Flexible normalized key mapping setup
                 const actualKeys = Object.keys(row);
                 const findKey = (targets) => actualKeys.find(k => targets.includes(k.trim().toLowerCase())) || '';
 
@@ -179,11 +176,12 @@
             const fiscalYears = [...new Set(rawDataset.map(item => item.NormalizedFY))].filter(Boolean).sort();
             const fySelect = document.getElementById("filter-fy");
             
-            fySelect.innerHTML = '<option value="ALL">All Years</option>';
+            fySelect.innerHTML = '<option value="ALL" class="text-slate-900">All Years</option>';
             fiscalYears.forEach(fy => {
                 let opt = document.createElement("option");
                 opt.value = fy;
                 opt.textContent = fy;
+                opt.className = "text-slate-900";
                 fySelect.appendChild(opt);
             });
         }
@@ -224,10 +222,6 @@
             document.getElementById("kpi-total-progs").textContent = rawDataset.length.toLocaleString('en-IN');
             document.getElementById("kpi-filtered-count").textContent = data.length.toLocaleString('en-IN');
         }
-
-        if(typeof window.activeTrendChart === 'undefined') { window.activeTrendChart = null; }
-        if(typeof window.activeMissionChart === 'undefined') { window.activeMissionChart = null; }
-        if(typeof window.activeGeoChart === 'undefined') { window.activeGeoChart = null; }
 
         function initializeVisualizationEngines() {
             const trendCtx = document.getElementById('chart-trends').getContext('2d');
