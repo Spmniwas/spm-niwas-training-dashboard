@@ -49,7 +49,7 @@
                 </select>
             </div>
 
-            <!-- 3. New Pop-Up Trigger Section Layout -->
+            <!-- 3. Participation from State/ UT Pop-Up Trigger -->
             <div class="flex flex-col justify-end">
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Participation from State/ UT</label>
                 <select id="metric-state-select" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-900 text-sm font-medium focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer">
@@ -61,7 +61,7 @@
             <div class="md:col-span-3 border-t border-slate-100 pt-4">
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Training Mode (Select Multiple)</label>
                 <div id="mode-checkbox-container" class="flex flex-wrap gap-4 text-sm font-medium text-slate-700">
-                    <!-- Dynamic check fields -->
+                    <!-- Dynamic checkboxes -->
                 </div>
             </div>
         </section>
@@ -100,47 +100,30 @@
             </div>
         </section>
 
-        <!-- Master Information Ledger -->
+        <!-- Master Information Ledger (Redesigned Section) -->
         <section class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
             <div class="flex justify-between items-center mb-4">
                 <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide">Master Program Ledger</h4>
-                <span class="text-xs text-slate-400 italic">Click rows to expand details</span>
+                <span class="text-xs text-blue-600 font-semibold italic">Click the participant number hyperlink to see state breakdowns</span>
             </div>
             <div id="master-table-container"></div>
         </section>
     </main>
 
-    <!-- State/UT Detail Analytics Pop-up Window Component Layer -->
-    <div id="state-modal-backdrop" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl border border-slate-200 overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
-            <!-- Modal Header -->
+    <!-- General Popup Overlay: Modal Framework (Handles State/UT selections and individual row breakdowns) -->
+    <div id="dashboard-modal-backdrop" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div id="modal-container-box" class="bg-white w-full max-w-2xl rounded-xl shadow-2xl border border-slate-200 overflow-hidden transform transition-all flex flex-col max-h-[85vh]">
+            <!-- Header Context -->
             <div class="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-4 flex justify-between items-center">
                 <div>
-                    <h3 id="modal-state-title" class="text-lg font-bold">State Name</h3>
-                    <p class="text-slate-400 text-xs uppercase tracking-wider font-semibold">Year-wise Mission Footprint</p>
+                    <h3 id="global-modal-title" class="text-base font-bold">Modal Title</h3>
+                    <p id="global-modal-subtitle" class="text-slate-400 text-xs uppercase tracking-wider font-semibold">Sub-label description context</p>
                 </div>
-                <button id="modal-close-btn" class="bg-white/10 hover:bg-white/20 text-white rounded-lg p-2 text-sm font-bold transition-all outline-none">&times; Close</button>
+                <button onclick="closeDashboardModal()" class="bg-white/10 hover:bg-white/20 text-white rounded-lg px-3 py-1.5 text-sm font-medium transition-all outline-none">&times; Close</button>
             </div>
-            <!-- Modal Content Layout -->
-            <div class="p-6 overflow-y-auto space-y-4">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm border-collapse">
-                        <thead>
-                            <tr class="bg-slate-100 border-b border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider">
-                                <th class="p-3">Fiscal Year</th>
-                                <th class="p-3 text-center bg-blue-50 text-blue-800">JJM Trainings</th>
-                                <th class="p-3 text-center bg-blue-50 text-blue-800 border-r border-slate-200">JJM Trainees</th>
-                                <th class="p-3 text-center bg-emerald-50 text-emerald-800">SBM Trainings</th>
-                                <th class="p-3 text-center bg-emerald-50 text-emerald-800 border-r border-slate-200">SBM Trainees</th>
-                                <th class="p-3 text-center bg-slate-50 text-slate-700">Other Trainings</th>
-                                <th class="p-3 text-center bg-slate-50 text-slate-700">Other Trainees</th>
-                            </tr>
-                        </thead>
-                        <tbody id="modal-matrix-body" class="divide-y divide-slate-200 font-medium text-slate-700">
-                            <!-- Matrix rows parsed dynamically from JS engine -->
-                        </tbody>
-                    </table>
-                </div>
+            <!-- Body Container Grid -->
+            <div id="global-modal-content" class="p-6 overflow-y-auto">
+                <!-- Dynamically populated tables go here -->
             </div>
         </div>
     </div>
@@ -176,10 +159,8 @@
                 }
             });
 
-            // Bind pop-up modal close triggers
-            document.getElementById("modal-close-btn").addEventListener("click", closeStatePopUpModal);
-            document.getElementById("state-modal-backdrop").addEventListener("click", (e) => {
-                if(e.target.id === "state-modal-backdrop") closeStatePopUpModal();
+            document.getElementById("dashboard-modal-backdrop").addEventListener("click", (e) => {
+                if(e.target.id === "dashboard-modal-backdrop") closeDashboardModal();
             });
         });
 
@@ -205,10 +186,29 @@
                 row.NormalizedFY = row[fyKey] ? row[fyKey].trim() : 'Unknown';
                 row.Total = parseInt(row[totalKey]) || 0;
                 row.NormalizedProgName = row[progKey] ? row[progKey].trim() : '';
-                row.NormalizedTrainingName = row[trainKey] ? row[trainKey].trim() : '';
+                row.NormalizedTrainingName = row[trainKey] ? row[trainKey].trim() : 'Untitled Program';
                 row.NormalizedStartDate = row[startDateKey] ? row[startDateKey].trim() : '';
                 row.NormalizedEndDate = row[endDateKey] ? row[endDateKey].trim() : '';
                 
+                // Calculate dynamic duration span length metrics safely
+                row.CalculatedDays = "-";
+                if(row.NormalizedStartDate && row.NormalizedEndDate) {
+                    const parseDate = (dStr) => {
+                        const parts = dStr.split(/[-/]/);
+                        if(parts.length === 3) {
+                            if(parts[2].length === 4) return new Date(parts[2], parts[1]-1, parts[0]);
+                            return new Date(2000 + parseInt(parts[2]), parts[1]-1, parts[0]);
+                        }
+                        return new Date(dStr);
+                    };
+                    const sDate = parseDate(row.NormalizedStartDate);
+                    const eDate = parseDate(row.NormalizedEndDate);
+                    if(!isNaN(sDate) && !isNaN(eDate)) {
+                        const diffTime = Math.abs(eDate - sDate);
+                        row.CalculatedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+                    }
+                }
+
                 const progUpper = row.NormalizedProgName.toUpperCase();
                 const nameUpper = row.NormalizedTrainingName.toUpperCase();
                 
@@ -259,7 +259,7 @@
             const checkboxContainer = document.getElementById("mode-checkbox-container");
             checkboxContainer.innerHTML = ""; 
 
-            uniqueModes.forEach((mode, index) => {
+            uniqueModes.forEach((mode) => {
                 const label = document.createElement("label");
                 label.className = "inline-flex items-center space-x-2 bg-slate-100 border border-slate-300 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-slate-200 transition-all select-none";
                 
@@ -268,7 +268,6 @@
                 checkbox.value = mode;
                 checkbox.checked = true;
                 checkbox.className = "rounded text-blue-600 focus:ring-blue-400 filter-mode-checkbox h-4 w-4";
-                
                 checkbox.addEventListener("change", executePipelineRefresh);
                 
                 label.appendChild(checkbox);
@@ -304,65 +303,114 @@
             }
         }
 
-        // Pop-up calculation logic engine
+        // Global Modal Window Control Mechanisms
+        function openDashboardModal(title, subtitle, htmlContent) {
+            document.getElementById("global-modal-title").textContent = title;
+            document.getElementById("global-modal-subtitle").textContent = subtitle;
+            document.getElementById("global-modal-content").innerHTML = htmlContent;
+            document.getElementById("dashboard-modal-backdrop").classList.remove("hidden");
+        }
+
+        function closeDashboardModal() {
+            document.getElementById("dashboard-modal-backdrop").classList.add("hidden");
+            document.getElementById("metric-state-select").value = "NONE";
+        }
+
+        // Launcher 1: Triggered via "Participation from State/ UT" Dropdown
         function launchStatePopUpModal() {
             const state = document.getElementById("metric-state-select").value;
             if(state === "NONE") return;
 
-            document.getElementById("modal-state-title").textContent = state;
-            const matrixBody = document.getElementById("modal-matrix-body");
-            matrixBody.innerHTML = "";
-
+            let htmlTableRows = "";
             const uniqueFys = [...new Set(rawDataset.map(item => item.NormalizedFY))].filter(Boolean).sort();
 
             uniqueFys.forEach(fy => {
                 const fyRows = rawDataset.filter(r => r.NormalizedFY === fy);
-
-                let jjmTrainings = 0, jjmTrainees = 0;
-                let sbmTrainings = 0, sbmTrainees = 0;
-                let otherTrainings = 0, otherTrainees = 0;
+                let jjmTrainings = 0, jjmTrainees = 0, sbmTrainings = 0, sbmTrainees = 0, otherTrainings = 0, otherTrainees = 0;
 
                 fyRows.forEach(row => {
                     const count = parseInt(row[state]) || 0;
                     if(count > 0) {
-                        if(row.calculatedMission.includes("JJM")) {
-                            jjmTrainings++; jjmTrainees += count;
-                        } else if(row.calculatedMission.includes("SBM")) {
-                            sbmTrainings++; sbmTrainees += count;
-                        } else {
-                            otherTrainings++; otherTrainees += count;
-                        }
+                        if(row.calculatedMission.includes("JJM")) { jjmTrainings++; jjmTrainees += count; }
+                        else if(row.calculatedMission.includes("SBM")) { sbmTrainings++; sbmTrainees += count; }
+                        else { otherTrainings++; otherTrainees += count; }
                     }
                 });
 
-                // Render row entry if the state had any activity that fiscal year
                 if((jjmTrainees + sbmTrainees + otherTrainees) > 0) {
-                    const tr = document.createElement("tr");
-                    tr.className = "hover:bg-slate-50 transition-colors";
-                    tr.innerHTML = `
-                        <td class="p-3 font-semibold text-slate-900">${fy}</td>
-                        <td class="p-3 text-center text-blue-700">${jjmTrainings}</td>
-                        <td class="p-3 text-center text-blue-900 font-bold border-r border-slate-200">${jjmTrainees.toLocaleString('en-IN')}</td>
-                        <td class="p-3 text-center text-emerald-700">${sbmTrainings}</td>
-                        <td class="p-3 text-center text-emerald-900 font-bold border-r border-slate-200">${sbmTrainees.toLocaleString('en-IN')}</td>
-                        <td class="p-3 text-center text-slate-600">${otherTrainings}</td>
-                        <td class="p-3 text-center text-slate-900 font-bold">${otherTrainees.toLocaleString('en-IN')}</td>
-                    `;
-                    matrixBody.appendChild(tr);
+                    htmlTableRows += `
+                        <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors">
+                            <td class="p-3 font-semibold text-slate-900">${fy}</td>
+                            <td class="p-3 text-center text-blue-700">${jjmTrainings}</td>
+                            <td class="p-3 text-center text-blue-900 font-bold bg-blue-50/50">${jjmTrainees.toLocaleString('en-IN')}</td>
+                            <td class="p-3 text-center text-emerald-700">${sbmTrainings}</td>
+                            <td class="p-3 text-center text-emerald-900 font-bold bg-emerald-50/50">${sbmTrainees.toLocaleString('en-IN')}</td>
+                            <td class="p-3 text-center text-slate-600">${otherTrainings}</td>
+                            <td class="p-3 text-center text-slate-900 font-bold bg-slate-50">${otherTrainees.toLocaleString('en-IN')}</td>
+                        </tr>`;
                 }
             });
 
-            if(matrixBody.children.length === 0) {
-                matrixBody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400 italic">No participation history recorded across any portfolio for this location.</td></tr>`;
-            }
+            const template = `
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider">
+                                <th class="p-3">Fiscal Year</th>
+                                <th class="p-3 text-center text-blue-800">JJM Sessions</th>
+                                <th class="p-3 text-center text-blue-800 bg-blue-50">JJM Trainees</th>
+                                <th class="p-3 text-center text-emerald-800">SBM Sessions</th>
+                                <th class="p-3 text-center text-emerald-800 bg-emerald-50">SBM Trainees</th>
+                                <th class="p-3 text-center text-slate-700">Other Sessions</th>
+                                <th class="p-3 text-center text-slate-700 bg-slate-50">Other Trainees</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 font-medium text-slate-700">
+                            ${htmlTableRows || '<tr><td colspan="7" class="p-4 text-center text-slate-400 italic">No attendance trace found.</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>`;
 
-            document.getElementById("state-modal-backdrop").classList.remove("hidden");
+            openDashboardModal(state, "Year-wise Mission Performance Summary Breakdown", template);
         }
 
-        function closeStatePopUpModal() {
-            document.getElementById("state-modal-backdrop").classList.add("hidden");
-            document.getElementById("metric-state-select").value = "NONE";
-        }
+        // Launcher 2: Triggered via Total Column Hyperlink click on Table rows
+        window.launchRowStateBreakdownPopup = function(rowId) {
+            const rowData = rawDataset.find(r => r.id == rowId);
+            if(!rowData) return;
+
+            let traceHtmlRows = "";
+            let matchedStatesCount = 0;
+
+            stateColumns.forEach(state => {
+                const count = parseInt(rowData[state]) || 0;
+                if(count > 0) {
+                    matchedStatesCount++;
+                    traceHtmlRows += `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
+                            <td class="p-3 font-semibold text-slate-800">${state}</td>
+                            <td class="p-3 text-right font-bold text-blue-700 text-base">${count.toLocaleString('en-IN')}</td>
+                        </tr>`;
+                }
+            });
+
+            const template = `
+                <div class="max-w-md mx-auto">
+                    <table class="w-full text-left text-sm border-collapse shadow-sm rounded-lg overflow-hidden border border-slate-200">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider">
+                                <th class="p-3">State / Union Territory</th>
+                                <th class="p-3 text-right">Officials Deployed</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 font-medium text-slate-700">
+                            ${traceHtmlRows || '<tr><td colspan="2" class="p-4 text-center text-slate-400 italic">No macro breakdowns recorded for individual states.</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>`;
+
+            openDashboardModal(rowData.NormalizedTrainingName, `Portfolio Vertical: ${rowData.calculatedMission}`, template);
+        };
 
         function initializeVisualizationEngines() {
             const trendCtx = document.getElementById('chart-trends').getContext('2d');
@@ -435,59 +483,52 @@
             geoChartObj.update();
         }
 
+        // Redesigned Tabular Layout Implementation Factory Block
         function renderMasterTable() {
             activeTableInstance = new Tabulator("#master-table-container", {
                 data: [],
                 layout: "fitColumns",
-                responsiveLayout: "collapse",
                 pagination: "local",
                 paginationSize: 10,
                 paginationSizeSelector: [5, 10, 25, 50],
                 movableColumns: true,
                 columns: [
-                    {formatter: "responsiveCollapse", width: 30, minWidth: 30, hozAlign: "center", resizable: false, headerSort: false},
-                    {title: "Year", field: "NormalizedFY", width: 80, hozAlign: "center"},
-                    {title: "Mode", field: "NormalizedMode", width: 120, hozAlign: "center"},
-                    {title: "Program Portfolio", field: "NormalizedProgName", width: 150, tooltip: true},
-                    {title: "Training Target Subject", field: "NormalizedTrainingName", width: 280, tooltip: true},
-                    {title: "Start Date", field: "NormalizedStartDate", width: 110, hozAlign: "center"},
-                    {title: "End Date", field: "NormalizedEndDate", width: 110, hozAlign: "center"},
-                    {title: "Total Trainees", field: "Total", width: 130, hozAlign: "right", formatter: "money", formatterParams: {precision: 0}}
-                ],
-                rowFormatter: function(row) {
-                    const rowData = row.getData();
-                    const holderEl = document.createElement("div");
-                    const tableEl = document.createElement("div");
-
-                    holderEl.className = "bg-slate-100/80 rounded-lg border border-slate-200 text-xs p-3 m-2";
-                    holderEl.innerHTML = `<p class="font-bold text-slate-700 mb-2">Regional State Breakdowns (Non-Zero Counts)</p>`;
-
-                    let contributions = [];
-                    stateColumns.forEach(state => {
-                        let val = parseInt(rowData[state]) || 0;
-                        if(val > 0) {
-                            contributions.push(`<span class="inline-flex bg-white px-2 py-1 rounded border border-slate-300 text-slate-700"><strong>${state}:</strong>&nbsp;${val}</span>`);
+                    {title: "Year", field: "NormalizedFY", width: 85, hozAlign: "center", fontStyle: "bold"},
+                    
+                    // Column 2: Consolidated Title and Metadata Layout Block (Satisfies custom instruction request)
+                    {
+                        title: "Training Programme Specification", 
+                        field: "NormalizedTrainingName", 
+                        minWidth: 350,
+                        formatter: function(cell) {
+                            const data = cell.getRow().getData();
+                            return `
+                                <div class="py-1">
+                                    <div class="font-bold text-slate-900 text-sm leading-snug">${data.NormalizedTrainingName}</div>
+                                    <div class="flex flex-wrap items-center gap-1.5 mt-1.5 text-[11px] font-semibold tracking-wide">
+                                        <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-md border border-blue-200">${data.NormalizedMode}</span>
+                                        <span class="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-md border border-purple-200">${data.calculatedMission}</span>
+                                        <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-300">Duration: ${data.CalculatedDays} Days</span>
+                                    </div>
+                                </div>`;
                         }
-                    });
-
-                    if(contributions.length > 0) {
-                        tableEl.className = "flex flex-wrap gap-2";
-                        tableEl.innerHTML = contributions.join("");
-                    } else {
-                        tableEl.innerHTML = `<span class="text-slate-400 italic">No localized state data recorded for this row.</span>`;
+                    },
+                    {title: "Start Date", field: "NormalizedStartDate", width: 115, hozAlign: "center"},
+                    {title: "End Date", field: "NormalizedEndDate", width: 115, hozAlign: "center"},
+                    
+                    // Column 5: Hyperlinked Action Trigger Total Element Field Box
+                    {
+                        title: "Total Trainees", 
+                        field: "Total", 
+                        width: 140, 
+                        hozAlign: "right",
+                        formatter: function(cell) {
+                            const val = cell.getValue();
+                            const id = cell.getRow().getData().id;
+                            return `<button onclick="launchRowStateBreakdownPopup(${id})" class="text-blue-600 font-extrabold hover:text-indigo-800 hover:underline cursor-pointer transition-all text-sm tracking-wide bg-blue-50 border border-blue-200 px-3 py-1 rounded-md shadow-sm w-full text-right">${val.toLocaleString('en-IN')}</button>`;
+                        }
                     }
-
-                    holderEl.appendChild(tableEl);
-                    row.getElement().appendChild(holderEl);
-                    holderEl.style.display = "none";
-                },
-                rowClick: function(e, row) {
-                    const element = row.getElement().querySelector(".bg-slate-100\\/80");
-                    if (element) {
-                        element.style.display = element.style.display === "none" ? "block" : "none";
-                        activeTableInstance.redraw();
-                    }
-                }
+                ]
             });
         }
     </script>
