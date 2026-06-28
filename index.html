@@ -481,4 +481,80 @@
             trendChartObj.update();
 
             const missionBuckets = ["Jal Jeevan Mission (JJM)", "Swachh Bharat Mission (SBM-G)", "Other Initiatives"];
-            const missionCounts = missionBuckets.map(bucket => data.filter(r => r.calculatedMission
+            const missionCounts = missionBuckets.map(bucket => data.filter(r => r.calculatedMission === bucket).reduce((sum, r) => sum + r.Total, 0));
+
+            missionChartObj.data = {
+                labels: ['JJM', 'SBM-G', 'Other'],
+                datasets: [{ data: missionCounts, backgroundColor: ['#1d4ed8', '#10b981', '#64748b'] }]
+            };
+            missionChartObj.update();
+
+            const stateSums = {};
+            stateColumns.forEach(state => { stateSums[state] = 0; });
+            data.forEach(row => {
+                stateColumns.forEach(state => {
+                    stateSums[state] += (parseInt(row[state]) || 0);
+                });
+            });
+
+            const sortedStates = Object.entries(stateSums)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            geoChartObj.data = {
+                labels: sortedStates.map(x => x[0]),
+                datasets: [{
+                    label: 'Officials Trained',
+                    data: sortedStates.map(x => x[1]),
+                    backgroundColor: '#4f46e5'
+                }]
+            };
+            geoChartObj.update();
+        }
+
+        function renderMasterTable() {
+            activeTableInstance = new Tabulator("#master-table-container", {
+                data: [],
+                layout: "fitColumns",
+                pagination: "local",
+                paginationSize: 10,
+                paginationSizeSelector: [5, 10, 25, 50],
+                movableColumns: true,
+                columns: [
+                    {title: "Year", field: "NormalizedFY", width: 85, hozAlign: "center"},
+                    {
+                        title: "Training Programme Specification", 
+                        field: "NormalizedTrainingName", 
+                        minWidth: 350,
+                        formatter: function(cell) {
+                            const data = cell.getRow().getData();
+                            return `
+                                <div class="py-1">
+                                    <div class="font-bold text-slate-900 text-sm leading-snug">${data.NormalizedTrainingName}</div>
+                                    <div class="flex flex-wrap items-center gap-1.5 mt-1.5 text-[11px] font-semibold tracking-wide">
+                                        <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-md border border-blue-200">${data.NormalizedMode}</span>
+                                        <span class="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-md border border-purple-200">${data.calculatedMission}</span>
+                                        <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-300">Duration: ${data.CalculatedDays} Days</span>
+                                    </div>
+                                </div>`;
+                        }
+                    },
+                    {title: "Start Date", field: "NormalizedStartDate", width: 115, hozAlign: "center"},
+                    {title: "End Date", field: "NormalizedEndDate", width: 115, hozAlign: "center"},
+                    {
+                        title: "Total Trainees", 
+                        field: "Total", 
+                        width: 140, 
+                        hozAlign: "right",
+                        formatter: function(cell) {
+                            const val = cell.getValue();
+                            const id = cell.getRow().getData().id;
+                            return `<button onclick="launchRowStateBreakdownPopup(${id})" class="text-blue-600 font-extrabold hover:text-indigo-800 hover:underline cursor-pointer transition-all text-sm tracking-wide bg-blue-50 border border-blue-200 px-3 py-1 rounded-md shadow-sm w-full text-right">${val.toLocaleString('en-IN')}</button>`;
+                        }
+                    }
+                ]
+            });
+        }
+    </script>
+</body>
+</html>
