@@ -6,9 +6,7 @@
     <title>SPM NIWAS Capacity Building Dashboard</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://unpkg.com/tabulator-tables@5.5.2/dist/css/tabulator_tailwindcss.min.css" rel="stylesheet">
     
-    <script src="https://unpkg.com/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
@@ -90,12 +88,14 @@
             </div>
         </section>
 
-        <section class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-            <div class="flex justify-between items-center mb-4">
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
                 <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide">Master Program Ledger</h4>
-                <span class="text-xs text-blue-600 font-semibold italic">Click the participant number hyperlink to see state breakdowns</span>
+                <span class="text-xs text-blue-600 font-semibold italic">Click the total trainees button to view state-wise split popups</span>
             </div>
-            <div id="master-table-container"></div>
+            
+            <div id="master-cards-list-container" class="space-y-3">
+                </div>
         </section>
     </main>
 
@@ -125,7 +125,6 @@
         ];
 
         let rawDataset = [];
-        let activeTableInstance = null;
         let trendChartObj = null;
         let missionChartObj = null;
         let geoChartObj = null;
@@ -217,7 +216,6 @@
 
             populateFilterControls();
             initializeVisualizationEngines();
-            renderMasterTable();
             executePipelineRefresh();
         }
 
@@ -290,10 +288,48 @@
             document.getElementById("kpi-total-progs").textContent = filteredData.length.toLocaleString('en-IN');
 
             refreshChartVisualizations(filteredData);
-            
-            if (activeTableInstance) {
-                activeTableInstance.setData(filteredData);
+            renderMasterProgramCards(filteredData);
+        }
+
+        // Native Card Generation Engine matching the requested blueprint design layout
+        function renderMasterProgramCards(data) {
+            const listContainer = document.getElementById("master-cards-list-container");
+            listContainer.innerHTML = ""; 
+
+            if(data.length === 0) {
+                listContainer.innerHTML = `<div class="p-8 text-center text-slate-400 italic bg-slate-50 border border-dashed rounded-xl">No training program records discoverable under the selected filtration matrix limits.</div>`;
+                return;
             }
+
+            data.forEach(row => {
+                const card = document.createElement("div");
+                card.className = "bg-white border border-slate-200 hover:border-slate-300 rounded-xl shadow-xs p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4 transition-all";
+                
+                card.innerHTML = `
+                    <div class="flex-1 space-y-2">
+                        <h5 class="font-bold text-slate-900 text-base tracking-tight leading-snug">
+                            ${row.NormalizedTrainingName}
+                        </h5>
+                        
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500 font-medium">
+                            <span class="bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded border border-blue-200 font-bold">${row.NormalizedMode}</span>
+                            <span class="bg-purple-50 text-purple-700 px-2.5 py-0.5 rounded border border-purple-200 font-bold">${row.calculatedMission}</span>
+                            <span class="flex items-center gap-1"><strong class="text-slate-700">Duration:</strong> ${row.CalculatedDays} Days</span>
+                            <span class="flex items-center gap-1"><strong class="text-slate-700">Start Date:</strong> ${row.NormalizedStartDate || 'N/A'}</span>
+                            <span class="flex items-center gap-1"><strong class="text-slate-700">End Date:</strong> ${row.NormalizedEndDate || 'N/A'}</span>
+                            <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200 text-[11px] font-semibold">FY: ${row.NormalizedFY}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end md:pl-4 border-t md:border-t-0 border-slate-100 pt-3 md:pt-0">
+                        <button onclick="launchRowStateBreakdownPopup(${row.id})" class="inline-flex items-center justify-between gap-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-extrabold px-4 py-2.5 rounded-lg shadow-sm transition-all text-sm w-full md:w-auto hover:scale-[1.01] active:scale-[0.99]">
+                            <span>Trainees Attended:</span>
+                            <span class="bg-blue-600 text-white px-2.5 py-0.5 rounded-md text-xs tracking-wide">${row.Total.toLocaleString('en-IN')} ↗</span>
+                        </button>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            });
         }
 
         function openDashboardModal(title, subtitle, htmlContent) {
@@ -507,62 +543,6 @@
                 }]
             };
             geoChartObj.update();
-        }
-
-        // Redesigned clean layout engine for Tabulator ledger grid
-        function renderMasterTable() {
-            activeTableInstance = new Tabulator("#master-table-container", {
-                data: [],
-                layout: "fitColumns",
-                pagination: "local",
-                paginationSize: 10,
-                paginationSizeSelector: [5, 10, 25, 50],
-                movableColumns: true,
-                resizableRows: true, // Prevents row layout collapses
-                columns: [
-                    {title: "Year", field: "NormalizedFY", width: 85, hozAlign: "center", headerSort: true},
-                    {
-                        title: "Training Programme Specification", 
-                        field: "NormalizedTrainingName", 
-                        minWidth: 400,
-                        headerSort: true,
-                        formatter: function(cell) {
-                            const data = cell.getRow().getData();
-                            // Uses absolute wrapping constraints to clean up rendering blocks
-                            return `
-                                <div class="whitespace-normal break-words p-2 space-y-2">
-                                    <div class="font-bold text-slate-900 text-sm tracking-tight leading-relaxed">
-                                        ${data.NormalizedTrainingName}
-                                    </div>
-                                    <div class="flex flex-wrap gap-1.5 text-[11px] font-bold tracking-wide">
-                                        <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200">${data.NormalizedMode}</span>
-                                        <span class="bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-200">${data.calculatedMission}</span>
-                                        <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">${data.CalculatedDays} Days</span>
-                                    </div>
-                                </div>`;
-                        }
-                    },
-                    {title: "Start Date", field: "NormalizedStartDate", width: 110, hozAlign: "center"},
-                    {title: "End Date", field: "NormalizedEndDate", width: 110, hozAlign: "center"},
-                    {
-                        title: "Total Trainees", 
-                        field: "Total", 
-                        width: 140, 
-                        hozAlign: "right",
-                        headerSort: true,
-                        formatter: function(cell) {
-                            const val = cell.getValue();
-                            const id = cell.getRow().getData().id;
-                            return `
-                                <div class="p-1">
-                                    <button onclick="launchRowStateBreakdownPopup(${id})" class="text-blue-600 font-extrabold hover:text-blue-800 hover:underline cursor-pointer transition-all text-xs bg-blue-50 border border-blue-200 px-2.5 py-1 rounded shadow-sm tracking-wide">
-                                        ${val.toLocaleString('en-IN')} ↗
-                                    </button>
-                                </div>`;
-                        }
-                    }
-                ]
-            });
         }
     </script>
 </body>
