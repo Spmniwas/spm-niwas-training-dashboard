@@ -115,7 +115,6 @@
     <script>
         const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSM4pDzELLAQqxIxXJ1J6OcvtUpTSWqGyXeCGmTPHrtJzN-3t1nCDy3ACwnRUMFm-TXDhNtKrR_Vxpl/pub?gid=1860593713&single=true&output=csv";
         
-        // Cleaned target state columns to strip out layout white spaces safely
         const stateColumns = [
             "A&N Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chattisgarh", "Delhi", 
             "Dadra & Nagar Haveli & Daman & Diu", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", 
@@ -131,7 +130,6 @@
         let missionChartObj = null;
         let geoChartObj = null;
 
-        // Register DataLabels globally in Chart.js structural layer
         Chart.register(ChartDataLabels);
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -207,7 +205,6 @@
                     row.calculatedMission = "Other Initiatives";
                 }
 
-                // Clean header variances across cells to catch space mismatches safely
                 actualKeys.forEach(k => {
                     const cleanK = k.trim();
                     if(cleanK !== k) {
@@ -512,6 +509,7 @@
             geoChartObj.update();
         }
 
+        // Redesigned clean layout engine for Tabulator ledger grid
         function renderMasterTable() {
             activeTableInstance = new Tabulator("#master-table-container", {
                 data: [],
@@ -520,36 +518,47 @@
                 paginationSize: 10,
                 paginationSizeSelector: [5, 10, 25, 50],
                 movableColumns: true,
+                resizableRows: true, // Prevents row layout collapses
                 columns: [
-                    {title: "Year", field: "NormalizedFY", width: 85, hozAlign: "center"},
+                    {title: "Year", field: "NormalizedFY", width: 85, hozAlign: "center", headerSort: true},
                     {
                         title: "Training Programme Specification", 
                         field: "NormalizedTrainingName", 
-                        minWidth: 350,
+                        minWidth: 400,
+                        headerSort: true,
                         formatter: function(cell) {
                             const data = cell.getRow().getData();
+                            // Uses absolute wrapping constraints to clean up rendering blocks
                             return `
-                                <div class="py-1">
-                                    <div class="font-bold text-slate-900 text-sm leading-snug">${data.NormalizedTrainingName}</div>
-                                    <div class="flex flex-wrap items-center gap-1.5 mt-1.5 text-[11px] font-semibold tracking-wide">
-                                        <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-md border border-blue-200">${data.NormalizedMode}</span>
-                                        <span class="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-md border border-purple-200">${data.calculatedMission}</span>
-                                        <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-300">Duration: ${data.CalculatedDays} Days</span>
+                                <div class="whitespace-normal break-words p-2 space-y-2">
+                                    <div class="font-bold text-slate-900 text-sm tracking-tight leading-relaxed">
+                                        ${data.NormalizedTrainingName}
+                                    </div>
+                                    <div class="flex flex-wrap gap-1.5 text-[11px] font-bold tracking-wide">
+                                        <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200">${data.NormalizedMode}</span>
+                                        <span class="bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-200">${data.calculatedMission}</span>
+                                        <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">${data.CalculatedDays} Days</span>
                                     </div>
                                 </div>`;
                         }
                     },
-                    {title: "Start Date", field: "NormalizedStartDate", width: 115, hozAlign: "center"},
-                    {title: "End Date", field: "NormalizedEndDate", width: 115, hozAlign: "center"},
+                    {title: "Start Date", field: "NormalizedStartDate", width: 110, hozAlign: "center"},
+                    {title: "End Date", field: "NormalizedEndDate", width: 110, hozAlign: "center"},
                     {
                         title: "Total Trainees", 
                         field: "Total", 
                         width: 140, 
                         hozAlign: "right",
+                        headerSort: true,
                         formatter: function(cell) {
                             const val = cell.getValue();
                             const id = cell.getRow().getData().id;
-                            return `<button onclick="launchRowStateBreakdownPopup(${id})" class="text-blue-600 font-extrabold hover:text-indigo-800 hover:underline cursor-pointer transition-all text-sm tracking-wide bg-blue-50 border border-blue-200 px-3 py-1 rounded-md shadow-sm w-full text-right">${val.toLocaleString('en-IN')}</button>`;
+                            return `
+                                <div class="p-1">
+                                    <button onclick="launchRowStateBreakdownPopup(${id})" class="text-blue-600 font-extrabold hover:text-blue-800 hover:underline cursor-pointer transition-all text-xs bg-blue-50 border border-blue-200 px-2.5 py-1 rounded shadow-sm tracking-wide">
+                                        ${val.toLocaleString('en-IN')} ↗
+                                    </button>
+                                </div>`;
                         }
                     }
                 ]
