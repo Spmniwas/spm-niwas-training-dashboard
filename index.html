@@ -5,14 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPM NIWAS Capacity Building Dashboard</title>
     
+    <!-- CSS Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- JS Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js DataLabels Plugin Dependency for Numeric Labels -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased relative">
 
+    <!-- Top Navigation Header -->
     <header class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div>
@@ -27,7 +31,9 @@
 
     <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
+        <!-- Control Station (Filters Layout) -->
         <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- 1. Search by Year -->
             <div class="flex flex-col justify-end">
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Search by Year</label>
                 <select id="filter-fy" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-900 text-sm font-medium focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer">
@@ -35,6 +41,7 @@
                 </select>
             </div>
 
+            <!-- 2. Search by Mission Dropdown -->
             <div class="flex flex-col justify-end">
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Search by Mission</label>
                 <select id="filter-mission-dropdown" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-900 text-sm font-medium focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer">
@@ -42,6 +49,7 @@
                 </select>
             </div>
 
+            <!-- 3. Participation from State/ UT Pop-Up Trigger -->
             <div class="flex flex-col justify-end">
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Participation from State/ UT</label>
                 <select id="metric-state-select" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-900 text-sm font-medium focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer">
@@ -49,13 +57,16 @@
                 </select>
             </div>
 
+            <!-- 4. Multiple Selection Training Mode Checkbox Panel -->
             <div class="md:col-span-3 border-t border-slate-100 pt-4">
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Training Mode (Select Multiple)</label>
                 <div id="mode-checkbox-container" class="flex flex-wrap gap-4 text-sm font-medium text-slate-700">
-                    </div>
+                    <!-- Checkboxes generated dynamically -->
+                </div>
             </div>
         </section>
 
+        <!-- KPI Summary Deck -->
         <section class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-blue-600">
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Officials Trained</p>
@@ -67,6 +78,7 @@
             </div>
         </section>
 
+        <!-- Analytics Visual Layer -->
         <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 lg:col-span-2 flex flex-col justify-between">
                 <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">FY-wise trend</h4>
@@ -88,17 +100,21 @@
             </div>
         </section>
 
+        <!-- Master Program Ledger -->
         <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
             <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
-                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide">Master Program Ledger</h4>
+                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide">Master Program Ledger (Latest First)</h4>
                 <span class="text-xs text-blue-600 font-semibold italic">Click the total trainees button to view state-wise split popups</span>
             </div>
             
+            <!-- Target Card Row Insertion Container -->
             <div id="master-cards-list-container" class="space-y-3">
-                </div>
+                <!-- Data cards injected via update UI method below -->
+            </div>
         </section>
     </main>
 
+    <!-- General Popup Overlay Modal Component Layer -->
     <div id="dashboard-modal-backdrop" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div id="modal-container-box" class="bg-white w-full max-w-2xl rounded-xl shadow-2xl border border-slate-200 overflow-hidden transform transition-all flex flex-col max-h-[85vh]">
             <div class="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-4 flex justify-between items-center">
@@ -149,6 +165,28 @@
             });
         });
 
+        // Helper function to safely parse date string formats into numeric timestamps
+        function parseDateToTimestamp(dStr) {
+            if (!dStr) return 0;
+            const parts = dStr.trim().split(/[-/]/);
+            if (parts.length === 3) {
+                let day = parseInt(parts[0], 10);
+                let month = parseInt(parts[1], 10) - 1;
+                let year = parseInt(parts[2], 10);
+                
+                // Handle text months if formatted like 29-Jun-2026
+                if (isNaN(month)) {
+                    const monthMap = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
+                    month = monthMap[parts[1].toLowerCase().substring(0,3)] || 0;
+                }
+                
+                if (year < 100) year += 2000;
+                return new Date(year, month, day).getTime();
+            }
+            const parsed = new Date(dStr).getTime();
+            return isNaN(parsed) ? 0 : parsed;
+        }
+
         function processDataset(data) {
             rawDataset = data.filter(row => {
                 const keys = Object.keys(row).map(k => k.trim().toLowerCase());
@@ -175,19 +213,14 @@
                 row.NormalizedStartDate = row[startDateKey] ? row[startDateKey].trim() : '';
                 row.NormalizedEndDate = row[endDateKey] ? row[endDateKey].trim() : '';
                 
+                // Parse date timestamp for accurate sorting
+                row.StartTimestamp = parseDateToTimestamp(row.NormalizedStartDate);
+
                 row.CalculatedDays = "-";
                 if(row.NormalizedStartDate && row.NormalizedEndDate) {
-                    const parseDate = (dStr) => {
-                        const parts = dStr.split(/[-/]/);
-                        if(parts.length === 3) {
-                            if(parts[2].length === 4) return new Date(parts[2], parts[1]-1, parts[0]);
-                            return new Date(2000 + parseInt(parts[2]), parts[1]-1, parts[0]);
-                        }
-                        return new Date(dStr);
-                    };
-                    const sDate = parseDate(row.NormalizedStartDate);
-                    const eDate = parseDate(row.NormalizedEndDate);
-                    if(!isNaN(sDate) && !isNaN(eDate)) {
+                    const sDate = new Date(row.StartTimestamp);
+                    const eDate = new Date(parseDateToTimestamp(row.NormalizedEndDate));
+                    if(!isNaN(sDate) && !isNaN(eDate) && row.StartTimestamp > 0 && eDate.getTime() > 0) {
                         const diffTime = Math.abs(eDate - sDate);
                         row.CalculatedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
                     }
@@ -276,12 +309,15 @@
             const selectedMission = document.getElementById("filter-mission-dropdown").value;
             const checkedModes = Array.from(document.querySelectorAll(".filter-mode-checkbox:checked")).map(box => box.value);
 
-            const filteredData = rawDataset.filter(row => {
+            let filteredData = rawDataset.filter(row => {
                 const matchesFy = (selectedFy === "ALL" || row.NormalizedFY === selectedFy);
                 const matchesMission = (selectedMission === "ALL" || row.calculatedMission === selectedMission);
                 const matchesMode = checkedModes.includes(row.NormalizedMode);
                 return matchesFy && matchesMission && matchesMode;
             });
+
+            // STRICT SORTING RULE: Sort records by Start Date (Latest First)
+            filteredData.sort((a, b) => b.StartTimestamp - a.StartTimestamp);
 
             const totalTrained = filteredData.reduce((sum, r) => sum + r.Total, 0);
             document.getElementById("kpi-total-trained").textContent = totalTrained.toLocaleString('en-IN');
@@ -291,7 +327,6 @@
             renderMasterProgramCards(filteredData);
         }
 
-        // Native Card Generation Engine matching the requested blueprint design layout
         function renderMasterProgramCards(data) {
             const listContainer = document.getElementById("master-cards-list-container");
             listContainer.innerHTML = ""; 
